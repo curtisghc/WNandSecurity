@@ -26,17 +26,27 @@ def read_key(fname):
         return fp.read()
 
 #append hmac to message, delimited by ";"
+#this function is called when sending a message
 def hmac_digest(text, key_h):
+    #strip newline from taking stdin
     text = text.rstrip()
+    #create hmac object from key and plaintext
     h_1 = hmac.new(key_h, text.encode('utf-8'))
+    #return only the hex encoded digest
     return h_1.hexdigest()
 
+#check hmac validation, this is called by the reciever of a message
 def validate_message(text, digest, key_h):
+    #create hmac object
     h_1 = hmac.new(key_h, text.encode('utf-8'))
     my_digest = h_1.hexdigest()
+    #original plaintext
     print("Message: " + text)
+    #hex digest recieved from sender
     print("Digest: " + digest + "\n")
+    #recievers own calculation of digest
     print("My Digest: " + my_digest)
+    #compare the two, basically just a "=="
     print("Validated: " + str(hmac.compare_digest(digest, my_digest)))
 
 
@@ -78,49 +88,49 @@ while True:
     # maintains a list of possible input streams
     sockets_list = [sys.stdin, server]
 
-    """ There are two possible input situations. Either the
-    user wants to give  manual input to send to other people,
-    or the server is sending a message  to be printed on the
-    screen. Select returns from sockets_list, the stream that
-    is reader for input. So for example, if the server wants
-    to send a message, then the if condition will hold true
-    below.If the user wants to send a message, the else
-    condition will evaluate as true"""
     read_sockets, write_socket, error_socket = select.select(sockets_list, [], [])
 
     for socks in read_sockets:
         if socks == server:
             message = socks.recv(2048)
             message = message.split(b' ')
+            #strip sender ip
             print("\n" + message[0].decode('utf-8'))
             message = message[1]
+            #print base ciphertext
             print("Ciphertxet:")
             print(message)
             try:
+                #decrypt entire message here
                 message = key_d.decrypt(message, padding=True)
             except:
+                #weird error
                 print("[Unable to decrypt message]")
                 print(sys.exc_info()[0])
             else:
                 message = message.decode('utf-8')
+                #newline delimits the end of plaintext and start of digest
                 message = message.split('\n')
                 plaintext = message[0]
                 digest = message[1]
 
+                #send message, digest, and secret key to validate
                 validate_message(plaintext, digest, key_h)
                 print()
         else:
             plaintext = sys.stdin.readline()
-            #hmac appended to plaintext message here
+            #hmac generated from key and plaintext
             digest = hmac_digest(plaintext, key_h)
+
             sys.stdout.write("\n<You>\n")
             sys.stdout.write("Plaintext:" + plaintext)
             sys.stdout.write("Digest:" + digest + "\n")
+            #hmac appended to plaintext
             message = plaintext + digest
-            #des message encryption here
+
+            #des encrypts entire message here
             message = key_d.encrypt(message.encode('utf-8'), padding=True)
             print("Ciphertext:" + str(message) + "\n")
-            #print(message)
             server.send(message)
             sys.stdout.flush()
 server.close()
