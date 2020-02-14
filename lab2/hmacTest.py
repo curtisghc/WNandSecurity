@@ -9,9 +9,16 @@ import re
 from des import DesKey
 import hmac
 
-key = 'aoeuaoeu'
-key_h = hmac.new(key)
+plainText = "the quick brown fox"
+
+key_h = 'aoeuaoeu'
 
 print(key)
 print(key_h)
+
+h1 = hmac.new(key, plainText)
+h2 = hmac.new(key, plainText)
+
+print(h1.hexdigest())
+print(h2.hexdigest())
 

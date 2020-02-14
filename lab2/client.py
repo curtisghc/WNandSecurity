@@ -25,6 +25,20 @@ def read_key(fname):
     with open(fname, 'r') as fp:
         return fp.read()
 
+#append hmac to message, delimited by ";"
+def hmac_digest(text, key_h):
+    text = text.rstrip()
+    h_1 = hmac.new(key_h, text.encode('utf-8'))
+    return h_1.hexdigest()
+
+def validate_message(text, digest, key_h):
+    h_1 = hmac.new(key_h, text.encode('utf-8'))
+    my_digest = h_1.hexdigest()
+    print("Message: " + text)
+    print("Digest: " + digest + "\n")
+    print("My Digest: " + my_digest)
+    print("Validated: " + str(hmac.compare_digest(digest, my_digest)))
+
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 if len(sys.argv) != 3:
@@ -42,15 +56,14 @@ else:
     key_des = read_key("key_d.txt")
     key_hmac = read_key("key_h.txt")
 
+key_d = DesKey(key_des.encode('utf-8'))
+key_h = key_hmac.encode('utf-8')
 
 print("DES key: ")
 print(key_des.encode('utf-8'))
 print("HMAC key: ")
-print(key_hmac.encode('utf-8'))
-
-key_d = DesKey(key_des.encode('utf-8'))
-key_h = hmac.new(key_hmac.encode('utf-8'))
-
+print(key_h)
+print()
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 if len(sys.argv) != 3:
@@ -79,22 +92,35 @@ while True:
         if socks == server:
             message = socks.recv(2048)
             message = message.split(b' ')
-            print("\nMessage from " + message[0].decode('utf-8'))
+            print("\n" + message[0].decode('utf-8'))
+            message = message[1]
             print("Ciphertxet:")
-            print(message[1])
+            print(message)
             try:
-                message[1] = key_d.decrypt(message[1], padding=True)
+                message = key_d.decrypt(message, padding=True)
             except:
-                print("[Unable't decrypt message from " + message[0] + "]")
+                print("[Unable to decrypt message]")
+                print(sys.exc_info()[0])
             else:
-                message[1] = message[1].decode('utf-8')
-                print("Plaintext:")
-                print(message[1])
+                message = message.decode('utf-8')
+                message = message.split('\n')
+                plaintext = message[0]
+                digest = message[1]
+
+                validate_message(plaintext, digest, key_h)
+                print()
         else:
-            message = sys.stdin.readline()
-            sys.stdout.write("<You>")
-            sys.stdout.write(message)
+            plaintext = sys.stdin.readline()
+            #hmac appended to plaintext message here
+            digest = hmac_digest(plaintext, key_h)
+            sys.stdout.write("\n<You>\n")
+            sys.stdout.write("Plaintext:" + plaintext)
+            sys.stdout.write("Digest:" + digest + "\n")
+            message = plaintext + digest
+            #des message encryption here
             message = key_d.encrypt(message.encode('utf-8'), padding=True)
+            print("Ciphertext:" + str(message) + "\n")
+            #print(message)
             server.send(message)
             sys.stdout.flush()
 server.close()
