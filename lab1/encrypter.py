@@ -34,6 +34,7 @@ while (True):
     if(data == 'quit'):
         break
     encrypted_data = key0.encrypt(data.encode('utf-8'), padding=True)
+    print(type(encrypted_data))
     print(encrypted_data)
 
 
