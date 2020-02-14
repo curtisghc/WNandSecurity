@@ -1,6 +1,6 @@
 # Lab 2 for wireless networks and security
 
-![Screenshot](https://raw.githubusercontent.com/curtisghc/Security_Lab_1/master/Screenshot.png)
+![Screenshot](https://raw.githubusercontent.com/curtisghc/WNandSecurity/master/lab2/screenshots/demo.png)
 
 ## Dependencies
 Currently Python2.7 and 3 are needed, will fix later.
